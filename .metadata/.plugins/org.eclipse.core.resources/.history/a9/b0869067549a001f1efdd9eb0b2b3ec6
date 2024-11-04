@@ -1,0 +1,101 @@
+package javaproject_241104;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.List;
+
+public class MemoManager extends JFrame {
+	private JTextField titleField;
+	private JTextArea contentArea;
+	private JButton addButton, deleteButton, viewButton;
+	private JList<String> memoList;
+	private DefaultListModel<String> listModel;
+	private MemoDAO dao;
+
+	public MemoManager() {
+		dao = new MemoDAO();
+
+		setTitle("메모 프로그램");
+		setSize(400, 400);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+		JPanel inputPanel = new JPanel(new BorderLayout());
+		titleField = new JTextField();
+		contentArea = new JTextArea(5, 20);
+		inputPanel.add(new JLabel("제목"), BorderLayout.NORTH);
+		inputPanel.add(titleField, BorderLayout.CENTER);
+		inputPanel.add(new JLabel("내용"), BorderLayout.SOUTH);
+		inputPanel.add(new JScrollPane(contentArea), BorderLayout.AFTER_LAST_LINE);
+
+		addButton = new JButton("메모추가");
+		addButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				String title = titleField.getText();
+				String content = contentArea.getText();
+				MemoDTO memo = new MemoDTO(0, title, content);
+				if (dao.addMemo(memo)) {
+					JOptionPane.showMessageDialog(null, "메모가 추가되었습니다.");
+					titleField.setText("");
+					contentArea.setText("");
+					refreshMemoList();
+				} else {
+					JOptionPane.showMessageDialog(null, "메모 추가 실패.");
+				}
+			}
+		});
+
+		deleteButton = new JButton("삭제");
+		deleteButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				int selectedIndex = memoList.getSelectedIndex();
+				if (selectedIndex != -1) {
+					String selectedValue = memoList.getSelectedValue();
+					int id = Integer.parseInt(selectedValue.split(":")[0]);
+					if (dao.deleteMemo(id)) {
+						JOptionPane.showMessageDialog(null, "메모가 삭제되었습니다.");
+						refreshMemoList();
+					} else {
+						JOptionPane.showMessageDialog(null, "메모 삭제 실패.");
+					}
+				}
+			}
+		});
+
+		viewButton = new JButton("메모조회");
+		viewButton.addActionListener(e -> refreshMemoList());
+
+		listModel = new DefaultListModel<>();
+		memoList = new JList<>(listModel);
+		refreshMemoList();
+
+		JPanel buttonPanel = new JPanel();
+		buttonPanel.add(addButton);
+		buttonPanel.add(deleteButton);
+		buttonPanel.add(viewButton);
+
+		add(inputPanel, BorderLayout.NORTH);
+		add(new JScrollPane(memoList), BorderLayout.CENTER);
+		add(buttonPanel, BorderLayout.SOUTH);
+
+		setVisible(true);
+	}
+
+	private void refreshMemoList() {
+	    listModel.clear();
+	    ArrayList<MemoDTO> memos = dao.viewMemo(); 
+	    for (MemoDTO memo : memos) {
+	        listModel.addElement(memo.getId() + ": " + memo.getTitle());
+	    }
+	}
+
+
+
+	public static void main(String[] args) {
+		new MemoManager();
+	}
+}
